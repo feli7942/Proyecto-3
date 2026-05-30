@@ -1,0 +1,68 @@
+@startuml "Diagrama de Clases"
+header CE5507 - Proyecto 3
+
+class VentanaPrincipal {
+    - lblDistancia : Object
+    - lblLuxes : Object
+    - lblEstado : Object
+    - sliderDistMin : Object
+    - sliderDistMax : Object
+    - spinTiempoFocus : Object
+    - btnConfigurar : Object
+    - timerRefresco : QTimer
+    + inicializarComponentesVisuales() : void
+    + actualizarPantalla() : void
+    + alDarClicConfigurar() : void
+}
+
+class DispositivoSerial {
+    - puerto : String
+    - baudrate : int
+    - conexion : Serial
+    + conectar() : boolean
+    + desconectar() : void
+    + leerTrama() : String
+    + enviarComandoConfig(distMin: int, distMax: int) : void
+    + enviarComandoAlerta(activar: boolean) : void
+}
+
+class TelemetriaDesk {
+    - distanciaActual : int
+    - luxesActuales : int
+    - estadoActual : int
+    - umbralDistanciaMin : int
+    - umbralDistanciaMax : int
+    + actualizarDatos(trama: String) : void
+    + modificarUmbrales(min: int, max: int) : void
+}
+
+class ControladorPomodoro {
+    - tiempoEnfoque : int
+    - tiempoDescanso : int
+    - tiempoRestante : int
+    - cronometroActivo : boolean
+    + iniciarTemporizador() : void
+    + pausarTemporizador() : void
+    + reiniciarTemporizador() : void
+    - tickSegundo() : void
+}
+
+' Relaciones estructurales basadas en el diseño
+VentanaPrincipal "1" *-- "1" ControladorPomodoro : Composición\n(El Pomodoro vive y muere con la GUI)
+VentanaPrincipal "1" o-- "1" DispositivoSerial : Agregación/Asociación
+VentanaPrincipal "1" o-- "1" TelemetriaDesk : Agregación/Asociación
+
+note right of DispositivoSerial
+  Parsea cadenas tipo:
+  "D:65,L:350,E:1\n"
+  Envía comandos tipo:
+  "SET_CONF:50,80\n"
+end note
+
+note bottom of ControladorPomodoro
+  Cuando tiempoRestante == 0, 
+  indica a VentanaPrincipal que ordene
+  al puerto serial disparar la alerta física.
+end note
+
+@enduml

@@ -1,0 +1,44 @@
+@startuml "Maquina de Estados"
+header CE5507 - Proyecto 3
+
+skinparam monochrome false
+skinparam shading false
+skinparam state {
+  BackgroundColor LightCyan
+  BorderColor DarkCyan
+  ArrowColor Black
+}
+
+[*] --> DESK_EMPTY : Encendido / Inicialización
+
+state DESK_EMPTY {
+  DESK_EMPTY : entry / Apagar retroiluminación LCD
+  DESK_EMPTY : entry / Silenciar Buzzer (PWM = 0)
+  DESK_EMPTY : entry / Enviar estado "E:0" por Serial
+}
+
+state FOCUS_ON {
+  FOCUS_ON : entry / Encender retroiluminación LCD
+  FOCUS_ON : entry / Mostrar en LCD: "Modo Focus: OK"
+  FOCUS_ON : entry / Enviar estado "E:1" por Serial
+  FOCUS_ON : do / Leer sensor BH1750 (Luxes)
+  FOCUS_ON : do / Leer sensor HC-SR04 (Distancia)
+}
+
+state ALERT_ACTIVE {
+  ALERT_ACTIVE : entry / Cambiar texto LCD a "¡ALERTA!"
+  ALERT_ACTIVE : entry / Activar Buzzer intermitente (PWM)
+  ALERT_ACTIVE : entry / Enviar estado "E:2" por Serial
+}
+
+DESK_EMPTY --> FOCUS_ON : Usuario Presente\n(Distancia <= 120 cm)
+
+FOCUS_ON --> DESK_EMPTY : Usuario Ausente\n(Distancia > 120 cm)
+
+FOCUS_ON --> ALERT_ACTIVE : Anomalía Detectada\n(Mala postura o baja luz por > 5 seg)
+
+ALERT_ACTIVE --> FOCUS_ON : Variables Normalizadas\n(Distancia y Luz OK)
+
+ALERT_ACTIVE --> DESK_EMPTY : Usuario Ausente\n(Distancia > 120 cm)
+
+@enduml
