@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║  POMODORO + SENSOR DASHBOARD — index.html                            ║
+  ║  Depends on:  styles.css  /  app.js                                  ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+-->
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pomodoro Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Dangrek&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ROOT — scales inner 1918×1078 canvas to fill the viewport -->
+  <div id="root">
+    <div id="canvas">
+
+      <!-- PANEL: DISTANCIA (left-top) -->
+      <div id="panel-distance" class="panel">
+        <div class="glow-bg glow-bg--distance">
+          <svg fill="none" preserveAspectRatio="none" viewBox="0 0 1125.42 922.721">
+            <g opacity="0.5">
+              <g filter="url(#dg1)"><ellipse cx="329.883" cy="228.541" class="glow-e1" rx="329.883" ry="228.541" transform="matrix(0.99999 -0.00445276 0.00927759 0.999957 230.711 234.298)" /></g>
+              <g filter="url(#dg2)"><ellipse cx="562.711" cy="501.186" class="glow-e2" rx="184.843" ry="128.054" /></g>
+            </g>
+            <defs>
+              <filter id="dg1" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="922.721" width="1125.42" x="0" y="0"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="116.412"/></filter>
+              <filter id="dg2" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="721.757" width="835.335" x="145.044" y="140.308"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="116.412"/></filter>
+            </defs>
+          </svg>
+        </div>
+        <p class="panel-header">DISTANCIA</p>
+        <p id="dist-value" class="sensor-value"></p>
+        <p id="dist-label" class="sensor-label"></p>
+        <div class="dist-illustration">
+          <svg fill="none" preserveAspectRatio="none" viewBox="0 0 641 440">
+            <defs>
+              <linearGradient id="dgs" gradientUnits="userSpaceOnUse" x1="542.5" x2="542.5" y1="123" y2="289.5"><stop stop-color="white"/><stop offset="1" stop-color="#999"/></linearGradient>
+              <linearGradient id="dgh" gradientUnits="userSpaceOnUse" x1="84.5" x2="84.5" y1="0" y2="326.5"><stop stop-color="white"/><stop offset="1" stop-color="#999"/></linearGradient>
+            </defs>
+            <rect fill="url(#dgs)" height="317" opacity="0.5" width="33" x="526" y="123"/>
+            <path d="M639.929 129H538.208H475.828C472.609 129 470 126.374 470 123.134V102.706V71.6106V38.7111C470 38.0936 470.729 37.7707 471.182 38.1879C487.81 53.5299 520.549 75.4347 542.735 88.9682C547.484 91.8656 552.693 94.5208 557.71 96.9275C572.045 103.806 586.862 109.718 602.066 114.61L640.255 126.897C641.418 127.271 641.15 129 639.929 129Z" fill="white"/>
+            <path id="dist-ruler" d="M183 43L183 89M183 135L183 89M456 43V89M456 135V89M183 89H456" stroke="#66EEB7" stroke-linecap="round" stroke-width="5"/>
+            <path d="M85.6393 0H68.9433L68.8085 0.0442231C66.1593 0.892625 62.5744 0.927371 59.7642 1.39333C40.4524 4.59539 19.7946 11.4477 9.36808 30.9314C3.57825 41.7507 2.21061 54.2038 0.547102 66.3648C-0.854459 76.611 0.581933 87.8987 3.20705 97.7382C9.03399 119.016 22.0245 141.659 35.6195 158.061C35.8927 164.07 34.975 173.262 34.6767 179.413L33.5346 203.422C33.4319 205.249 33.4411 207.4 33.3055 209.151C22.386 222.168 0.547102 254.973 0.547102 282.049C0.547102 309.126 2.3204 293.331 3.20705 282.049H157.389C157.389 256.361 120.376 220.729 101.869 206.123C103.221 199.36 104.92 192.673 106.289 185.912C111.009 190.071 115.527 190.921 121.46 192.035C123.569 192.367 125.633 192.753 127.768 192.797C140.336 193.05 142.089 181.622 142.277 171.213C145.723 169.18 150.245 167 152.802 163.72C155.864 159.79 149.868 154.08 147.163 151.991C150.104 152.148 156.373 152.806 157.389 148.779C158.369 144.89 155.506 137.835 153.838 134.416C158.93 134.224 171.963 129.754 168.388 121.916C165.486 115.556 160.993 110.036 157.321 104.231L157.141 103.947C154.692 100.077 152.231 96.1888 151.581 91.5282C151.312 89.5946 151.942 86.7111 152.218 84.7465C154.438 68.939 153.468 52.4139 146.591 38.0042C135.456 14.5692 112.147 3.12831 88.9316 0.636549C88.0286 0.539641 86.6296 0.348843 85.7668 0.0461409L85.6393 0Z" fill="url(#dgh)"/>
+          </svg>
+        </div>
+        <button class="pill-btn" id="btn-open-dist-modal">Cambiar rango de distancia</button>
+      </div>
+
+      <!-- PANEL: LUMINOSIDAD (left-bottom) -->
+      <div id="panel-luminosity" class="panel">
+        <div class="glow-bg glow-bg--lux">
+          <svg fill="none" preserveAspectRatio="none" viewBox="0 0 1125.42 922.721">
+            <g opacity="0.5">
+              <g filter="url(#lg1)"><ellipse cx="329.883" cy="228.541" class="glow-e1" rx="329.883" ry="228.541" transform="matrix(0.99999 -0.00445276 0.00927759 0.999957 230.711 234.298)"/></g>
+              <g filter="url(#lg2)"><ellipse cx="562.711" cy="501.186" class="glow-e2" rx="184.843" ry="128.054"/></g>
+            </g>
+            <defs>
+              <filter id="lg1" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="922.721" width="1125.42" x="0" y="0"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="116.412"/></filter>
+              <filter id="lg2" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="721.757" width="835.335" x="145.044" y="140.308"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="116.412"/></filter>
+            </defs>
+          </svg>
+        </div>
+        <p class="panel-header">LUMINOSIDAD</p>
+        <p id="lux-value" class="sensor-value"></p>
+        <p id="lux-label"  class="sensor-label"></p>
+        <div id="lux-lamp" class="lux-lamp">
+          <svg fill="none" preserveAspectRatio="none" viewBox="0 0 662.657 547">
+            <defs>
+              <linearGradient id="lgl" gradientUnits="userSpaceOnUse" x1="331.329" x2="331.329" y1="0" y2="273.53">
+                <stop id="lux-stop1" stop-color="#318A36" stop-opacity="0.62"/>
+                <stop id="lux-stop2" offset="1" stop-color="#3FB261"/>
+              </linearGradient>
+              <linearGradient id="lgs" gradientUnits="userSpaceOnUse" x1="331.829" x2="331.829" y1="331" y2="444.451">
+                <stop stop-color="white"/><stop offset="1" stop-color="#999"/>
+              </linearGradient>
+            </defs>
+            <path d="M223 333.53L0 188.53V0H662.657V188.53L439.657 333.53H223Z" fill="url(#lgl)" opacity="0.8"/>
+            <path id="lux-stand-full" d="M159.829 393.303V547H503.829V470.378V393.303C503.829 358.894 475.308 331 440.125 331H351.577H313.355H223.532C188.35 331 159.829 358.894 159.829 393.303Z" fill="url(#lgs)"/>
+          </svg>
+        </div>
+        <div id="lux-lamp-small" class="lux-lamp lux-lamp--small" style="display:none">
+          <svg fill="none" preserveAspectRatio="none" viewBox="0 0 344 216">
+            <defs>
+              <linearGradient id="lgss" gradientUnits="userSpaceOnUse" x1="172" x2="172" y1="0" y2="113.451">
+                <stop stop-color="white"/><stop offset="1" stop-color="#999"/>
+              </linearGradient>
+            </defs>
+            <path d="M0 62.303V216H344V139.378V62.303C344 27.894 315.479 0 280.296 0H191.748H153.526H63.7037C28.5211 0 0 27.894 0 62.303Z" fill="url(#lgss)"/>
+          </svg>
+        </div>
+        <button class="pill-btn" id="btn-open-lux-modal">Cambiar rango de luminosidad</button>
+      </div>
+
+      <!-- PANEL: POMODORO (center) -->
+      <div id="panel-pomodoro" class="panel">
+        <div id="pomodoro-glow" class="pomodoro-glow pomodoro-glow--work">
+          <svg fill="none" preserveAspectRatio="none" viewBox="0 0 1506 1506">
+            <g>
+              <g filter="url(#pg0)"><circle id="pg-outer" cx="753" cy="753" fill="#E28711" r="373"/></g>
+              <g filter="url(#pg1)"><circle id="pg-inner" cx="753" cy="818" fill="#EABD3F" r="209"/></g>
+            </g>
+            <defs>
+              <filter id="pg0" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="1506" width="1506" x="0" y="0"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="190"/></filter>
+              <filter id="pg1" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="1178" width="1178" x="164" y="229"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="190"/></filter>
+            </defs>
+          </svg>
+        </div>
+        <div class="pomodoro-header">
+          <p class="pomodoro-header__sub">mi tiempo</p>
+          <p class="pomodoro-header__title">POMODORO</p>
+        </div>
+        <div class="pomodoro-clock">
+          <p id="pomo-mode-label" class="pomodoro-mode-label"></p>
+          <p id="pomo-time" class="pomodoro-time">25:00</p>
+          <div class="pomodoro-controls">
+            <button id="btn-restart-cycle" class="circle-btn" title="Reiniciar ciclo actual">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" fill="white"/></svg>
+            </button>
+            <button id="btn-play-pause" class="play-pause-btn">
+              <span id="icon-play"><svg width="40" height="51" viewBox="0 0 40 51" fill="none"><path d="M2 2L38 25.5L2 49V2Z" fill="white" stroke="white" stroke-width="3" stroke-linejoin="round"/></svg></span>
+              <span id="icon-pause" style="display:none"><span class="pause-bar"></span><span class="pause-bar"></span></span>
+            </button>
+            <button id="btn-restart-all" class="circle-btn" title="Reiniciar todo el Pomodoro">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" fill="white"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="pomodoro-footer">
+          <p class="pomo-footer-stat"><span id="pomo-work-min" class="pomo-stat-num">25</span><span class="pomo-stat-text"> min concentración</span></p>
+          <p class="pomo-footer-stat"><span id="pomo-break-min" class="pomo-stat-num">5</span><span class="pomo-stat-text"> min descanso</span></p>
+          <button class="pill-btn" id="btn-open-pomo-modal">Cambiar intervalos</button>
+        </div>
+      </div>
+
+      <!-- PANEL: RUTINA (right) -->
+      <div id="panel-rutina" class="panel">
+        <div class="rutina-glow">
+          <svg fill="none" preserveAspectRatio="none" viewBox="0 0 1506 1506">
+            <g filter="url(#rg0)" opacity="0.5"><circle cx="753" cy="753" fill="#D589B9" r="373"/></g>
+            <defs><filter id="rg0" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="1506" width="1506" x="0" y="0"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="190"/></filter></defs>
+          </svg>
+        </div>
+        <div class="rutina-header">
+          <p class="rutina-header__sub">mis ejercicios de</p>
+          <p class="rutina-header__title">PAUSA ACTIVA</p>
+        </div>
+        <p id="rutina-name" class="rutina-name">Rutina 1</p>
+        <div id="exercise-list" class="exercise-list"></div>
+        <button class="pill-btn rutina-change-btn" id="btn-open-rutina-modal">Cambiar rutina de pausa activa</button>
+      </div>
+
+    </div><!-- /#canvas -->
+  </div><!-- /#root -->
+
+  <!-- MODAL: Distance range -->
+  <div id="modal-dist" class="modal-overlay" style="display:none">
+    <div class="modal-card">
+      <div class="modal-glow"><svg fill="none" preserveAspectRatio="none" viewBox="0 0 1419.77 1217.08" style="width:100%;height:100%"><g filter="url(#mgd)" opacity="0.5"><ellipse cx="709.883" cy="608.541" fill="#D589B9" rx="329.883" ry="228.541"/></g><defs><filter id="mgd" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="1217.08" width="1419.77" x="0" y="0"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="190"/></filter></defs></svg></div>
+      <button class="modal-close" data-close="modal-dist">&#x2715;</button>
+      <div class="modal-body">
+        <p class="modal-title">Rango de distancia actual</p>
+        <p id="dist-current-range" class="modal-current-range"></p>
+        <p class="modal-subtitle">Nuevo rango de distancia</p>
+        <div class="modal-inputs">
+          <div class="range-input-wrap"><input id="dist-min-input" class="range-input" type="number" min="1" max="500"/><span class="range-unit">cm</span></div>
+          <div class="range-dash">—</div>
+          <div class="range-input-wrap"><input id="dist-max-input" class="range-input" type="number" min="1" max="500"/><span class="range-unit">cm</span></div>
+        </div>
+        <button class="pill-btn modal-save-btn" id="btn-save-dist">Actualizar rango de distancia</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Luminosity range -->
+  <div id="modal-lux" class="modal-overlay" style="display:none">
+    <div class="modal-card">
+      <div class="modal-glow"><svg fill="none" preserveAspectRatio="none" viewBox="0 0 1419.77 1217.08" style="width:100%;height:100%"><g filter="url(#mgl)" opacity="0.5"><ellipse cx="709.883" cy="608.541" fill="#D589B9" rx="329.883" ry="228.541"/></g><defs><filter id="mgl" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="1217.08" width="1419.77" x="0" y="0"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="190"/></filter></defs></svg></div>
+      <button class="modal-close" data-close="modal-lux">&#x2715;</button>
+      <div class="modal-body">
+        <p class="modal-title">Rango de luminosidad actual</p>
+        <p id="lux-current-range" class="modal-current-range"></p>
+        <p class="modal-subtitle">Nuevo rango de luminosidad</p>
+        <div class="modal-inputs">
+          <div class="range-input-wrap"><input id="lux-min-input" class="range-input" type="number" min="1" max="20000"/><span class="range-unit">K</span></div>
+          <div class="range-dash">—</div>
+          <div class="range-input-wrap"><input id="lux-max-input" class="range-input" type="number" min="1" max="20000"/><span class="range-unit">K</span></div>
+        </div>
+        <button class="pill-btn modal-save-btn" id="btn-save-lux">Actualizar rango de luminosidad</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Pomodoro intervals -->
+  <div id="modal-pomo" class="modal-overlay" style="display:none">
+    <div class="modal-card modal-card--tall">
+      <div class="modal-glow"><svg fill="none" preserveAspectRatio="none" viewBox="0 0 1419.77 1449.41" style="width:100%;height:100%"><g filter="url(#mgp)" opacity="0.5"><ellipse cx="709.883" cy="724.707" fill="#D589B9" rx="329.883" ry="344.707"/></g><defs><filter id="mgp" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="1449.41" width="1419.77" x="0" y="0"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="190"/></filter></defs></svg></div>
+      <button class="modal-close" data-close="modal-pomo">&#x2715;</button>
+      <div class="modal-body modal-body--pomo">
+        <div class="pomo-field"><p class="modal-field-label">Tiempo de concentración</p><div class="time-input-wrap"><input id="pomo-work-input" class="time-input" type="number" min="1" max="120" value="25"/><span class="time-unit">min</span></div><p class="modal-hint">Recomendación: Periodos de concentración de 25 minutos</p></div>
+        <div class="pomo-field"><p class="modal-field-label">Tiempo para descanso corto</p><div class="time-input-wrap"><input id="pomo-short-input" class="time-input" type="number" min="1" max="120" value="5"/><span class="time-unit">min</span></div><p class="modal-hint">Recomendación: Descansos cortos de 5 minutos</p></div>
+        <div class="pomo-field"><p class="modal-field-label">Tiempo para descanso largo</p><div class="time-input-wrap"><input id="pomo-long-input" class="time-input" type="number" min="1" max="120" value="30"/><span class="time-unit">min</span></div><p class="modal-hint">Recomendación: Descansos de 15 - 30 minutos</p></div>
+        <button class="pill-btn modal-save-btn" id="btn-save-pomo">Actualizar intervalos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Select routine -->
+  <div id="modal-rutina" class="modal-overlay" style="display:none">
+    <div class="modal-card modal-card--tall">
+      <div class="modal-glow"><svg fill="none" preserveAspectRatio="none" viewBox="0 0 1419.77 1449.41" style="width:100%;height:100%"><g filter="url(#mgr)" opacity="0.5"><ellipse cx="709.883" cy="724.707" fill="#D589B9" rx="329.883" ry="344.707"/></g><defs><filter id="mgr" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="1449.41" width="1419.77" x="0" y="0"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="190"/></filter></defs></svg></div>
+      <button class="modal-close" data-close="modal-rutina">&#x2715;</button>
+      <p class="modal-title" style="margin-top:130px">Seleccionar rutina para descansos</p>
+      <div id="rutina-list" class="rutina-list"></div>
+      <button class="pill-btn modal-save-btn" id="btn-save-rutina">Actualizar rutina</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
