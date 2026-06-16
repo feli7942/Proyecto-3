@@ -1,0 +1,41 @@
+# ====================================================================
+# ENTORNO VIRTUAL (Variable según el sistema operativo)
+# ====================================================================
+venv/
+Venv/
+ENV/
+env/
+
+# ====================================================================
+# CACHÉ DE PYTHON (Archivos compilados de ejecución)
+# ====================================================================
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# ====================================================================
+# ARCHIVOS BASURA DE SISTEMAS OPERATIVOS
+# ====================================================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux / macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*~
+
+# ====================================================================
+# ENTORNOS DE DESARROLLO (Opcional, según el editor que usen)
+# ====================================================================
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
