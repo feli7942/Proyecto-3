@@ -42,7 +42,7 @@ Active el entorno virtual según su sistema operativo:
 source venv/bin/activate
 ```
 
-*(Sabrá que se activó correctamente porque verá el indicador (venv) al inicio de la línea de comandos de su terminal).*
+*(Sabrá que se activó correctamente porque verá el indicador ```(venv)``` al inicio de la línea de comandos de su terminal).*
 
 ### 4. Instalación de Dependencias
 
@@ -53,4 +53,10 @@ pip install -r requeriments.txt
 ```
 
 ## Ejecución de la Aplicación
+El proyecto está diseñado bajo un principio de modularidad y control centralizado. Toda la lógica del backend (servidor web y servidor de sockets WiFi) es inicializada y controlada a través del punto de entrada principal ```main.py```.
 
+Para arrancar el sistema completo, ejecute el siguiente comando desde la raíz del proyecto:
+
+```bash 
+python src/backend/main.py
+```
