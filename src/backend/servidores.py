@@ -2,7 +2,7 @@ import socket
 import threading
 import time
 import random
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request 
 from flask_cors import CORS
 
 
@@ -60,13 +60,18 @@ class ServidorHardware(threading.Thread):
     def _simular_hardware_offline(self):
         """Simulador de respaldo para pruebas de GUI aisladas."""
         d = random.randint(60, 90)
-        l = random.randint(200, 500)
+        l = random.randint(2500, 7500)
+
         e = 1 if (70 <= d <= 80) else 2
         self.modelo.actualizar(d, l, e)
 
 
 def crear_app_web(modelo_datos, ruta_frontend):
     """Fábrica de la aplicación web Flask y sus Endpoints."""
+    import logging
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    # =====================================================================
+
     app = Flask(__name__)
     CORS(app)
 
@@ -81,5 +86,23 @@ def crear_app_web(modelo_datos, ruta_frontend):
     @app.route('/api/telemetria', methods=['GET'])
     def get_telemetria():
         return jsonify(modelo_datos.obtener_datos())
+    
+    @app.route('/api/configurar/distancia', methods=['POST'])
+    def configurar_distancia():
+        datos = request.get_json()
+        min_dist = datos.get('min')
+        max_dist = datos.get('max')
+        
+        print(f"[*] Nueva configuración de distancia recibida: Min={min_dist}cm, Max={max_dist}cm")
+        return jsonify({"status": "success", "message": "Umbrales de distancia configurados"})
+
+    @app.route('/api/configurar/luz', methods=['POST'])
+    def configurar_luz():
+        datos = request.get_json()
+        min_luz = datos.get('min')
+        max_luz = datos.get('max')
+
+        print(f"[*] Nueva configuración de luz recibida: Min={min_luz} lx, Max={max_luz} lx")
+        return jsonify({"status": "success", "message": "Umbral de luz configurado"})
 
     return app
