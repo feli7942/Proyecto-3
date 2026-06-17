@@ -31,9 +31,9 @@ const CFG_DIST_MARGIN = 10;   // cm — "regular" tolerance band
 /* ── Luminosity sensor thresholds ──────────────────────────────────
    Ideal range: [LUX_MIN, LUX_MAX] (arbitrary lux units displayed as "K")
    Regular margin: ±LUX_MARGIN around the ideal range                */
-const CFG_LUX_MIN    = 4000;  // K — default ideal minimum luminosity
-const CFG_LUX_MAX    = 5000;  // K — default ideal maximum luminosity
-const CFG_LUX_MARGIN = 500;   // K — "regular" tolerance band
+const CFG_LUX_MIN    = 500;  // K — default ideal minimum luminosity
+const CFG_LUX_MAX    = 1000;  // K — default ideal maximum luminosity
+const CFG_LUX_MARGIN = 5;   // K — "regular" tolerance band
 
 /* ── Pomodoro default intervals ─────────────────────────────────────
    Times are in MINUTES.                                               */
@@ -320,6 +320,15 @@ function renderPomodoro() {
   // Footer stats
   $('pomo-work-min').textContent  = state.workMin;
   $('pomo-break-min').textContent = state.shortBreak;
+
+  fetch(`${BACKEND_URL}/api/configurar/pomodoro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      en_concentracion: state.running && !state.isBreak,
+      en_descanso: state.running && state.isBreak
+    })
+  }).catch(err => console.error("Error enviando estado Pomodoro:", err));
 }
 
 

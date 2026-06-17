@@ -1,113 +1,84 @@
-# src/test/simulador_arduino.py
 import socket
 import json
 import time
+import threading
+import sys
+import select
 
-# Configuración de red (Apunta al Servidor de Python)
-HOST_LOCAL = "127.0.0.1"
+HOST_LOCAL = "192.168.1.9"  # Ajusta tu IP local aquí
 PUERTO_TCP = 65432
 
-def iniciar_simulador_con_rutinas():
-    print("=== [SIMULADOR] Iniciando Emulación con Rutinas Cotidianas ===")
+# Estado de simulación global
+modo_bucle = "1"  # Por defecto arranca en rutina 1 (Mesa vacía)
+
+def escucha_teclado():
+    global modo_bucle
+    print("[*] Controles del teclado activos. Presiona [1, 2, 3, 4] + Enter para cambiar de rutina:")
+    print("    1: Mesa Vacía")
+    print("    2: Postura Correcta")
+    print("    3: Mala Postura Crítica")
+    print("    4: Anomalía Luminosa Crítica")
     
-    # Umbrales configurados localmente en la memoria del "Arduino"
-    umbrales = {
-        "distMin": 70,
-        "distMax": 80,
-        "luxMin": 4000,
-        "luxMax": 5000
-    }
-    
-    # Definición de los escenarios secuenciales (Nombre, Duración en segundos)
-    escenarios = [
-        {"nombre": "MESA_VACIA", "duracion": 8},
-        {"nombre": "POSTURA_CORRECTA", "duracion": 12},
-        {"nombre": "MALA_POSTURA_PROGRESIVA", "duracion": 15},
-        {"nombre": "ANOMALIA_LUMINOSA_CRITICA", "duracion": 12}
-    ]
-    
+    while True:
+        linea = sys.stdin.readline().strip()
+        if linea in ["1", "2", "3", "4"]:
+            modo_bucle = linea
+            print(f"\n[!] Cambiando manualmente a Rutina Bucle: {modo_bucle}")
+
+def escuchar_comandos_pasivos(sock):
+    """Escucha datos concurrentes enviados de forma pasiva desde Python."""
+    while True:
+        try:
+            raw_msg = sock.recv(1024).decode('utf-8')
+            if not raw_msg:
+                break
+            
+            evento = json.loads(raw_msg.strip())
+            tipo = evento.get("tipo")
+            
+            if tipo == "pomodoro":
+                print(f"\n[<- DOWNSTREAM POMODORO] Conc: {evento['en_concentracion']} | Desc: {evento['en_descanso']}")
+            elif tipo in ["config_dist", "config_lux"]:
+                print(f"\n[<- DOWNSTREAM CONFIG] Actualización de umbrales: {evento}")
+                
+        except Exception:
+            break
+
+def iniciar_simulador():
+    global modo_bucle
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
     try:
         sock.connect((HOST_LOCAL, PUERTO_TCP))
-        print(f"[+] Conectado al backend en {HOST_LOCAL}:{PUERTO_TCP}")
+        print(f"[+] Conectado al servidor TCP en {HOST_LOCAL}:{PUERTO_TCP}")
         
-        indice_escenario = 0
-        segundo_actual = 0
-        
-        # Variables base para simular variaciones físicas suaves
-        distancia_base = 150 # cm
-        luminosidad_base = 4500 # lx
+        # Levantar hilos asíncronos de entrada y salida pasiva
+        threading.Thread(target=escucha_teclado, daemon=True).start()
+        threading.Thread(target=escuchar_comandos_pasivos, args=(sock,), daemon=True).start()
         
         while True:
-            escenario = escenarios[indice_escenario]
-            nombre_esc = escenario["nombre"]
-            
-            # --- RUTINAS DE COMPORTAMIENTO COTIDIANO ---
-            if nombre_esc == "MESA_VACIA":
-                # Simula que no hay nadie (Distancia muy alta y luz ambiente normal)
-                distancia_medida = 160
-                luminosidad_medida = 4200
-                
-            elif nombre_esc == "POSTURA_CORRECTA":
-                # Simula que el usuario se sienta en el rango ideal de [70, 80]
-                distancia_medida = 75 
-                luminosidad_medida = 4600
-                
-            elif nombre_esc == "MALA_POSTURA_PROGRESIVA":
-                # Simula que el usuario empieza en un rango bajo [60, 65] y cae a una medición críticamente baja
-                if segundo_actual < 5:
-                    distancia_medida = 63  # Rango bajo de advertencia
-                else:
-                    distancia_medida = 45  # Medición muy baja (Anomalía crítica / Encorvado)
-                luminosidad_medida = 4400
-                
-            elif nombre_esc == "ANOMALIA_LUMINOSA_CRITICA":
-                # El usuario vuelve a estar a buena distancia pero la luz cae drásticamente de forma anormal
-                distancia_medida = 76
-                if segundo_actual < 4:
-                    distancia_medida = 76
-                    luminosidad_medida = 3800 # Rango bajo de advertencia
-                else:
-                    luminosidad_medida = 1200 # Medición anormal crítica (Oscuridad / Falla ambiental)
+            # Generar datos basados en el modo seleccionado por el teclado
+            if modo_bucle == "1":
+                dist, lux = 100, 800  # Vacío
+            elif modo_bucle == "2":
+                dist, lux = 75, 450   # Óptimo analógico
+            elif modo_bucle == "3":
+                dist, lux = 42, 500   # Muy cerca
+            elif modo_bucle == "4":
+                dist, lux = 76, 150   # Oscuridad analógica (ADC bajo)
 
-            # Enviar el paquete de telemetría por el socket en formato JSON
-            telemetria = {
-                "distancia": distancia_medida,
-                "luminosidad": luminosidad_medida
-            }
+            # Enviar telemetría regular (disminuimos prints drásticamente aquí)
+            telemetria = {"distancia": dist, "luminosidad": lux}
             sock.sendall(json.dumps(telemetria).encode('utf-8'))
             
-            print(f"[{nombre_esc} - {segundo_actual}s] -> Telemetría enviada: Dist={distancia_medida}cm, Luz={luminosidad_medida}lx")
+            time.sleep(1.5)  # Ráfaga pausada para limpiar terminal
             
-            # Escuchar de forma inmediata si hay respuesta de sincronización del backend
-            try:
-                respuesta = sock.recv(1024).decode('utf-8')
-                if respuesta:
-                    nuevos_umbrales = json.loads(respuesta.strip())
-                    if nuevos_umbrales["distMin"] != umbrales["distMin"]:
-                        print(f"     [<- Hardware Sync] Umbrales actualizados desde Web: DistMin={nuevos_umbrales['distMin']}cm")
-                        umbrales.update(nuevos_umbrales)
-            except Exception:
-                pass
-            
-            # Control del tiempo y transiciones de los escenarios
-            time.sleep(1)
-            segundo_actual += 1
-            
-            if segundo_actual >= escenario["duracion"]:
-                segundo_actual = 0
-                indice_escenario = (indice_escenario + 1) % len(escenarios)
-                print("\n" + "="*70)
-                print(f"[*] TRANSICIÓN DE RUTINA -> Cambiando a: {escenarios[indice_escenario]['nombre']}")
-                print("="*70)
-                
     except ConnectionRefusedError:
-        print("[-] Error: El backend (`main.py`) no está corriendo.")
+        print("[-] El backend no está corriendo.")
     except KeyboardInterrupt:
-        print("\n[-] Simulador por escenarios apagado.")
+        print("\n[-] Simulador cerrado.")
     finally:
         sock.close()
 
 if __name__ == "__main__":
-    iniciar_simulador_con_rutinas()
+    iniciar_simulador()

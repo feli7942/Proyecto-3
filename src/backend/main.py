@@ -25,7 +25,7 @@ if __name__ == '__main__':
     FRONTEND_DIR = BASE_DIR / "frontend"
     
     # Parámetros de Red
-    IP_LOCAL = obtener_ip_local()
+    IP_LECTURA = obtener_ip_local()
     PUERTO_HARDWARE = 65432
     PUERTO_WEB = 5000
     
@@ -33,13 +33,13 @@ if __name__ == '__main__':
     modelo_compartido = TelemetriaDesk()
     
     # 2. Inicializar y arrancar el servidor de sockets (Hardware WiFi)
-    hilo_socket = ServidorHardware(IP_LOCAL, PUERTO_HARDWARE, modelo_compartido)
+    hilo_socket = ServidorHardware(IP_LECTURA, PUERTO_HARDWARE, modelo_compartido)
     hilo_socket.start()
     
     # 3. Inicializar y correr el servidor de la aplicación web (Flask)
     app_web = crear_app_web(modelo_compartido, FRONTEND_DIR)
     
     print(f"[+] Interfaz en ejecución: http://localhost:{PUERTO_WEB}/")
-    print(f"[+] Servidor TCP listo para recibir al ESP8266 en {IP_LOCAL}:{PUERTO_HARDWARE}")
+    print(f"[+] Servidor TCP listo para recibir al ESP8266 en {IP_LECTURA}:{PUERTO_HARDWARE}")
     
     app_web.run(host='0.0.0.0', port=PUERTO_WEB, debug=False, use_reloader=False)

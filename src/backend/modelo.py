@@ -4,15 +4,15 @@ class TelemetriaDesk:
     """Clase contenedora del estado actual del Asistente de Escritorio."""
     def __init__(self):
         # Lecturas en tiempo real de los sensores
-        self.distancia = 80       # Valor por defecto (cm)
-        self.luminosidad = 4500   # Valor por defecto (luxes/K) - Escala ajustada a miles
+        self.distancia = 60       # Valor por defecto (cm)
+        self.luminosidad = 750   # Valor por defecto (luxes/K) - Escala ajustada a miles
         self.estado_fsm = 0       # 0: Vacío, 1: Enfoque, 2: Alerta
         
         # Umbrales configurables dinámicamente desde la interfaz web
         self.dist_min = 70
         self.dist_max = 80
-        self.lux_min = 4000
-        self.lux_max = 5000
+        self.lux_min = 500
+        self.lux_max = 1000
         
         self.lock = threading.Lock() # Exclusor mutuo para hilos
 
