@@ -1,12 +1,19 @@
 import threading
 
-
 class TelemetriaDesk:
     """Clase contenedora del estado actual del Asistente de Escritorio."""
     def __init__(self):
+        # Lecturas en tiempo real de los sensores
         self.distancia = 80       # Valor por defecto (cm)
-        self.luminosidad = 400    # Valor por defecto (luxes)
+        self.luminosidad = 4500   # Valor por defecto (luxes/K) - Escala ajustada a miles
         self.estado_fsm = 0       # 0: Vacío, 1: Enfoque, 2: Alerta
+        
+        # Umbrales configurables dinámicamente desde la interfaz web
+        self.dist_min = 70
+        self.dist_max = 80
+        self.lux_min = 4000
+        self.lux_max = 5000
+        
         self.lock = threading.Lock() # Exclusor mutuo para hilos
 
     def actualizar(self, distancia, luminosidad, estado):
@@ -22,5 +29,9 @@ class TelemetriaDesk:
             return {
                 "distancia": self.distancia,
                 "luminosidad": self.luminosidad,
-                "estado": self.estado_fsm
+                "estado": self.estado_fsm,
+                "distMin": self.dist_min,
+                "distMax": self.dist_max,
+                "luxMin": self.lux_min,
+                "luxMax": self.lux_max
             }
