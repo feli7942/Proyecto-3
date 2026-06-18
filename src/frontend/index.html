@@ -188,9 +188,9 @@
         <p id="lux-current-range" class="modal-current-range"></p>
         <p class="modal-subtitle">Nuevo rango de luminosidad</p>
         <div class="modal-inputs">
-          <div class="range-input-wrap"><input id="lux-min-input" class="range-input" type="number" min="1" max="20000"/><span class="range-unit">K</span></div>
+          <div class="range-input-wrap"><input id="lux-min-input" class="range-input" type="number" min="1" max="1023"/><span class="range-unit">K</span></div>
           <div class="range-dash">—</div>
-          <div class="range-input-wrap"><input id="lux-max-input" class="range-input" type="number" min="1" max="20000"/><span class="range-unit">K</span></div>
+          <div class="range-input-wrap"><input id="lux-max-input" class="range-input" type="number" min="1" max="1023"/><span class="range-unit">K</span></div>
         </div>
         <button class="pill-btn modal-save-btn" id="btn-save-lux">Actualizar rango de luminosidad</button>
       </div>
@@ -202,12 +202,14 @@
     <div class="modal-card modal-card--tall">
       <div class="modal-glow"><svg fill="none" preserveAspectRatio="none" viewBox="0 0 1419.77 1449.41" style="width:100%;height:100%"><g filter="url(#mgp)" opacity="0.5"><ellipse cx="709.883" cy="724.707" fill="#D589B9" rx="329.883" ry="344.707"/></g><defs><filter id="mgp" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse" height="1449.41" width="1419.77" x="0" y="0"><feFlood floodOpacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" mode="normal" result="shape"/><feGaussianBlur stdDeviation="190"/></filter></defs></svg></div>
       <button class="modal-close" data-close="modal-pomo">&#x2715;</button>
+      
       <div class="modal-body modal-body--pomo">
         <div class="pomo-field"><p class="modal-field-label">Tiempo de concentración</p><div class="time-input-wrap"><input id="pomo-work-input" class="time-input" type="number" min="1" max="120" value="25"/><span class="time-unit">min</span></div><p class="modal-hint">Recomendación: Periodos de concentración de 25 minutos</p></div>
         <div class="pomo-field"><p class="modal-field-label">Tiempo para descanso corto</p><div class="time-input-wrap"><input id="pomo-short-input" class="time-input" type="number" min="1" max="120" value="5"/><span class="time-unit">min</span></div><p class="modal-hint">Recomendación: Descansos cortos de 5 minutos</p></div>
         <div class="pomo-field"><p class="modal-field-label">Tiempo para descanso largo</p><div class="time-input-wrap"><input id="pomo-long-input" class="time-input" type="number" min="1" max="120" value="30"/><span class="time-unit">min</span></div><p class="modal-hint">Recomendación: Descansos de 15 - 30 minutos</p></div>
-        <button class="pill-btn modal-save-btn" id="btn-save-pomo">Actualizar intervalos</button>
       </div>
+      
+      <button class="pill-btn modal-save-btn" id="btn-save-pomo">Actualizar intervalos</button>
     </div>
   </div>
 

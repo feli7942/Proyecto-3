@@ -31,9 +31,9 @@ const CFG_DIST_MARGIN = 10;   // cm — "regular" tolerance band
 /* ── Luminosity sensor thresholds ──────────────────────────────────
    Ideal range: [LUX_MIN, LUX_MAX] (arbitrary lux units displayed as "K")
    Regular margin: ±LUX_MARGIN around the ideal range                */
-const CFG_LUX_MIN    = 4000;  // K — default ideal minimum luminosity
-const CFG_LUX_MAX    = 5000;  // K — default ideal maximum luminosity
-const CFG_LUX_MARGIN = 500;   // K — "regular" tolerance band
+const CFG_LUX_MIN    = 500;  // K — default ideal minimum luminosity
+const CFG_LUX_MAX    = 1000;  // K — default ideal maximum luminosity
+const CFG_LUX_MARGIN = 5;   // K — "regular" tolerance band
 
 /* ── Pomodoro default intervals ─────────────────────────────────────
    Times are in MINUTES.                                               */
@@ -108,45 +108,54 @@ const ROUTINES = [
 
 
 /* ╔══════════════════════════════════════════════════════════════════╗
-   ║  2. SENSOR SIMULATION                                            ║
-   ║                                                                  ║
-   ║  ⚠️  REPLACE THIS ENTIRE SECTION with real Arduino BLE data.    ║
-   ║                                                                  ║
-   ║  When reading from Bluetooth, call:                              ║
-   ║    onDistanceReading(valueCm)   — distance in centimetres        ║
-   ║    onLuxReading(valueK)         — luminosity in your lux units   ║
-   ║                                                                  ║
-   ║  Example BLE setup (Web Bluetooth API):                          ║
-   ║    const service = await device.gatt.getPrimaryService(UUID);    ║
-   ║    const char    = await service.getCharacteristic(CHAR_UUID);   ║
-   ║    char.addEventListener('characteristicvaluechanged', e => {    ║
-   ║      const val = e.target.value.getUint16(0, true);              ║
-   ║      onDistanceReading(val);                                     ║
-   ║    });                                                           ║
-   ║    await char.startNotifications();                              ║
+   ║  2. BACKEND RED INTEGRATION                                      ║
    ╚══════════════════════════════════════════════════════════════════╝ */
 
-let _simDist = CFG_DIST_MIN + 5;  // starting simulated distance (cm)
-let _simLux  = (CFG_LUX_MIN + CFG_LUX_MAX) / 2;  // starting simulated lux
+// Dirección del servidor local Flask
+const BACKEND_URL = 'http://localhost:5000';
 
-function startSensorSimulation() {
-  // Distance: random walk around the ideal center, clamped to [10, 130]
-  setInterval(() => {
-    const delta = (Math.random() - 0.4) * 8; // slight bias toward center
-    _simDist = Math.round(Math.min(130, Math.max(10, _simDist + delta)));
-    onDistanceReading(_simDist);
-  }, 1500);
+/**
+ * Consulta periódicamente la telemetría del Arduino procesada por Python.
+ */
+function fetchHardwareTelemetria() {
+  fetch(`${BACKEND_URL}/api/telemetria`)
+    .then(response => {
+      if (!response.ok) throw new Error("Error en respuesta de red");
+      return response.json();
+    })
+    .then(data => {
+      const rootStyle = document.body.style; // CORREGIDO: Bloquear a nivel de body completo para incluir los modales
 
-  // Luminosity: random walk, clamped to [1000, 8000]
-  setInterval(() => {
-    const delta = (Math.random() - 0.4) * 400;
-    _simLux = Math.round(Math.min(8000, Math.max(1000, _simLux + delta)));
-    onLuxReading(_simLux);
-  }, 1800);
+      // Control de bloqueo e iluminación de fondo por desconexión
+      if (!data.hardware_conectado) {
+        // Gris oscuro, sin clics en nada (ni modales) y opacidad baja
+        rootStyle.background = "#121212"; 
+        rootStyle.pointerEvents = "none"; 
+        rootStyle.opacity = "0.4";
+        return; // Detener flujo para no pintar datos viejos
+      } else {
+        // Restaurar entorno claro y habilitar clics e interacciones de inmediato
+        rootStyle.background = "#1c1c1c"; 
+        rootStyle.pointerEvents = "auto"; 
+        rootStyle.opacity = "1";
+      }
+
+      // Sincronizar variables internas del frontend
+      state.distCm = data.distancia;
+      state.luxK   = data.luminosidad;
+      
+      // Renderizar los cambios gráficos nativos
+      renderDistance();
+      renderLux();
+
+      if (data.estado === 2) {
+         console.warn("[ALERTA] Asistente reporta anomalía en postura o iluminación.");
+      }
+    })
+    .catch(error => {
+      console.error("[-] No se pudo conectar con el Asistente de Escritorio:", error.message);
+    });
 }
-
-/* END OF SENSOR SIMULATION SECTION ─────────────────────────────────── */
-
 
 /* ╔══════════════════════════════════════════════════════════════════╗
    ║  3. RUNTIME STATE                                                ║
@@ -326,6 +335,15 @@ function renderPomodoro() {
   // Footer stats
   $('pomo-work-min').textContent  = state.workMin;
   $('pomo-break-min').textContent = state.shortBreak;
+
+  fetch(`${BACKEND_URL}/api/configurar/pomodoro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      en_concentracion: state.running && !state.isBreak,
+      en_descanso: state.running && state.isBreak
+    })
+  }).catch(err => console.error("Error enviando estado Pomodoro:", err));
 }
 
 
@@ -415,13 +433,32 @@ function openDistModal() {
   $('dist-current-range').textContent = state.distMin + 'cm – ' + state.distMax + 'cm';
   openModal('modal-dist');
 }
+
 function saveDistModal() {
-  const min = Math.max(1, parseInt($('dist-min-input').value) || state.distMin);
-  const max = Math.max(min + 1, parseInt($('dist-max-input').value) || state.distMax);
-  state.distMin = min;
-  state.distMax = max;
-  closeModal('modal-dist');
-  renderDistance();
+  const minVal = parseInt($('dist-min-input').value, 10);
+  const maxVal = parseInt($('dist-max-input').value, 10);
+
+  if (isNaN(minVal) || isNaN(maxVal) || minVal >= maxVal) {
+    alert('Por favor, ingresa un rango de distancia válido (Mínimo menor que Máximo).');
+    return;
+  }
+
+  // Sincronizar las propiedades reales de configuración del objeto state
+  state.distMin = minVal; 
+  state.distMax = maxVal;
+
+  fetch(`${BACKEND_URL}/api/configurar/distancia`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ min: minVal, max: maxVal })
+  })
+  .then(res => res.json())
+  .then(data => console.log("[+] Límites de distancia actualizados en hardware."))
+  .catch(err => console.error("Error sincronizando umbrales de distancia:", err));
+
+  // SOLUCIÓN: Cambiar a 'modal-dist' que es el ID que existe realmente en la línea 416
+  closeModal('modal-dist'); 
+  renderDistance();        
 }
 
 // Luminosity modal
@@ -431,13 +468,32 @@ function openLuxModal() {
   $('lux-current-range').textContent = state.luxMin + 'K – ' + state.luxMax + 'K';
   openModal('modal-lux');
 }
+
 function saveLuxModal() {
-  const min = Math.max(1, parseInt($('lux-min-input').value) || state.luxMin);
-  const max = Math.max(min + 1, parseInt($('lux-max-input').value) || state.luxMax);
-  state.luxMin = min;
-  state.luxMax = max;
-  closeModal('modal-lux');
-  renderLux();
+  const minVal = parseInt($('lux-min-input').value, 10);
+  const maxVal = parseInt($('lux-max-input').value, 10); // CORREGIDO: Leer el input máximo del HTML
+
+  if (isNaN(minVal) || isNaN(maxVal) || minVal >= maxVal) {
+    alert('Por favor, ingresa un rango de luminosidad válido (Mínimo menor que Máximo).');
+    return;
+  }
+
+  // CORREGIDO: Actualizar ambas propiedades en el estado global
+  state.luxMin = minVal;
+  state.luxMax = maxVal;
+
+  // Enviar rango completo al Backend en Python
+  fetch(`${BACKEND_URL}/api/configurar/luz`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ min: minVal, max: maxVal }) // CORREGIDO: Mandar min y max
+  })
+  .then(res => res.json())
+  .then(data => console.log("[+] Rango de iluminación actualizado en hardware."))
+  .catch(err => console.error("Error sincronizando umbral de luz:", err));
+
+  closeModal('modal-lux'); 
+  renderLux();         
 }
 
 // Pomodoro intervals modal
@@ -566,6 +622,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ── Start sensor simulation (remove when using real BLE data) ────
-  startSensorSimulation();
+  // Iniciar bucle de actualización en tiempo real consumiendo la API de Python
+  setInterval(fetchHardwareTelemetria, 500);
 });
