@@ -61,9 +61,9 @@ def iniciar_simulador():
             if modo_bucle == "1":
                 dist, lux = 100, 800  # Vacío
             elif modo_bucle == "2":
-                dist, lux = 75, 450   # Óptimo analógico
+                dist, lux = 75, 550   # Óptimo analógico
             elif modo_bucle == "3":
-                dist, lux = 42, 500   # Muy cerca
+                dist, lux = 42, 650   # Muy cerca
             elif modo_bucle == "4":
                 dist, lux = 76, 150   # Oscuridad analógica (ADC bajo)
 

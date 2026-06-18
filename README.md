@@ -60,3 +60,9 @@ Para arrancar el sistema completo, ejecute el siguiente comando desde la raíz d
 ```bash 
 python src/backend/main.py
 ```
+
+Ahora abra el navegador web de su preferencia y escriba el siguiente link:
+
+```bash
+http://localhost:5000/
+```
