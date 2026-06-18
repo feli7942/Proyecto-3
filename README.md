@@ -19,7 +19,7 @@ Antes de inicializar la aplicación, asegúrese de contar con los siguientes com
 Abra una terminal en su sistema operativo, clone el repositorio remoto y colóquese en la raíz del proyecto ejecutando:
 
 ```bash
-git clone [https://github.com/feli7942/Proyecto-3.git](https://github.com/feli7942/Proyecto-3.git)
+git clone https://github.com/feli7942/Proyecto-3.git
 cd Proyecto-3
 ```
 
