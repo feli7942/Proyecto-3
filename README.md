@@ -1,68 +1,51 @@
 # Proyecto 3 - Asistente de Escritorio
 
-Este repositorio contiene el sistema para el **Asistente de Escritorio**, un proyecto desarrollado para el curso *CE5507 Modelación Hardware/Software con Orientación a Objetos*. El sistema integra una interfaz gráfica de usuario en HTML (Frontend) conectada de forma inalámbrica mediante sockets TCP/IP en un Backend de Python hacia un dispositivo de hardware basado en Arduino Uno.
+Este repositorio contiene el sistema integral para el **Asistente de Escritorio**, un proyecto desarrollado para el curso *CE5507 Modelación Hardware/Software con Orientación a Objetos*. 
+
+El sistema implementa un entorno ciberfísico que integra una interfaz gráfica de usuario interactiva basada en tecnologías web (Frontend), conectada de forma bidireccional mediante sockets TCP/IP a un Backend central en Python, comunicándose dinámicamente con un dispositivo de hardware simulado o físico (basado en Arduino Uno/ESP8266).
+
+---
 
 ## Requisitos Previos
 
-- Python 3.10 o superior instalado en el sistema.
-- Git instalado para el control de versiones.
+Antes de inicializar la aplicación, asegúrese de contar con los siguientes componentes instalados en su estación de trabajo:
+- **Python 3.10 o superior** (configurado en las variables de entorno del sistema).
+- **Git** para la gestión y control de versiones.
 
-## Guía de Inicialización del Entorno
+---
 
-Siga las instrucciones correspondientes según el sistema operativo de su estación de desarrollo para preparar el entorno virtual e instalar las dependencias requeridas.
+## Preparación Inicial
 
-### 1. Clonar el repositorio y posicionarse en la raíz
+Abra una terminal en su sistema operativo, clone el repositorio remoto y colóquese en la raíz del proyecto ejecutando:
 
 ```bash
-git clone https://github.com/feli7942/Proyecto-3.git
+git clone [https://github.com/feli7942/Proyecto-3.git](https://github.com/feli7942/Proyecto-3.git)
 cd Proyecto-3
 ```
 
-### 2. Creación del Entorno Virtual (```venv```)
+## Ejecución Automatizada de la Aplicación
 
-Cree un entorno virtual aislado para evitar conflictos globales de librerías.
+El proyecto cuenta con scripts lanzadores de nivel industrial que automatizan por completo la gestión del entorno. Al ejecutar el script correspondiente a su sistema operativo, este realizará las siguientes tareas de manera secuencial:
 
-```bash
-python -m venv venv
-```
+1. Detectar si existe el entorno virtual (```venv```). Si no se encuentra, lo creará automáticamente.
+2. Activar el entorno virtual aislado.
+3. Verificar, instalar o actualizar silenciosamente todas las dependencias listadas en el archivo ```requirements.txt```.
+4. Levantar de forma asíncrona el navegador web predeterminado apuntando directamente a la interfaz local (```http://localhost:5000```).
+5. Inicializar el backend centralizado (```main.py```) para activar el servidor Flask y el servidor de Sockets TCP.
 
-### 3. Activación del Entorno Virtual
+## Instrucciones para Windows
 
-Active el entorno virtual según su sistema operativo:
-
-- En Windows (PowerShell / CMD):
-
-```bash￼
-.\venv\Scripts\activate
-```
-
-- En Linux / macOS:
+Si utiliza PowerShell o CMD, simplemente ejecute el archivo por lotes ubicado en la raíz:
 
 ```bash
-source venv/bin/activate
+.\run.bat
 ```
 
-*(Sabrá que se activó correctamente porque verá el indicador ```(venv)``` al inicio de la línea de comandos de su terminal).*
+## Instrucciones para Linux
 
-### 4. Instalación de Dependencias
-
-Con el entorno virtual activo, ejecute el gestor de paquetes para instalar de forma automatizada las librerías necesarias especificadas en el archivo de requerimientos:
+Si se encuentra en un entorno Unix, otorgue permisos de ejecución al script de Shell e inicialícelo:
 
 ```bash
-pip install -r requeriments.txt
-```
-
-## Ejecución de la Aplicación
-El proyecto está diseñado bajo un principio de modularidad y control centralizado. Toda la lógica del backend (servidor web y servidor de sockets WiFi) es inicializada y controlada a través del punto de entrada principal ```main.py```.
-
-Para arrancar el sistema completo, ejecute el siguiente comando desde la raíz del proyecto:
-
-```bash 
-python src/backend/main.py
-```
-
-Ahora abra el navegador web de su preferencia y escriba el siguiente link:
-
-```bash
-http://localhost:5000/
+chmod +x run.sh
+.\run.sh
 ```
