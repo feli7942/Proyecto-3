@@ -124,27 +124,37 @@ function fetchHardwareTelemetria() {
       return response.json();
     })
     .then(data => {
-      const rootStyle = document.body.style; // CORREGIDO: Bloquear a nivel de body completo para incluir los modales
+      const rootStyle = document.body.style;
+      const badge = document.getElementById('status-badge');
+      const statusText = document.getElementById('status-text');
 
-      // Control de bloqueo e iluminación de fondo por desconexión
+      // Control de bloqueo, iluminación de fondo y Cápsula de Figma por desconexión
       if (!data.hardware_conectado) {
-        // Gris oscuro, sin clics en nada (ni modales) y opacidad baja
         rootStyle.background = "#121212"; 
         rootStyle.pointerEvents = "none"; 
         rootStyle.opacity = "0.4";
-        return; // Detener flujo para no pintar datos viejos
+        
+        // Sincronizar Cápsula Figma a estado Desconectado (Rojo)
+        if (badge) {
+          badge.className = "badge-desconectado";
+          statusText.textContent = "Desconectado";
+        }
+        return; 
       } else {
-        // Restaurar entorno claro y habilitar clics e interacciones de inmediato
-        rootStyle.background = "#1c1c1c"; 
+        rootStyle.background = "#1C1C1C"; // Color de fondo del Canvas oficial de Figma
         rootStyle.pointerEvents = "auto"; 
         rootStyle.opacity = "1";
+        
+        // Sincronizar Cápsula Figma a estado Conectado (Azul)
+        if (badge) {
+          badge.className = "badge-conectado";
+          statusText.textContent = "Conectado";
+        }
       }
 
-      // Sincronizar variables internas del frontend
       state.distCm = data.distancia;
       state.luxK   = data.luminosidad;
       
-      // Renderizar los cambios gráficos nativos
       renderDistance();
       renderLux();
 

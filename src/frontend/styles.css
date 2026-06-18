@@ -10,8 +10,16 @@ body { background: #1c1c1c; overflow: hidden; font-family: 'Inter', sans-serif; 
 /* ── Scale wrapper ──────────────────────────────────────────────────
    #canvas is always 1918×1078px; JS applies transform:scale() to it.  */
 #root   { position: fixed; inset: 0; overflow: hidden; background: #1c1c1c; }
-#canvas { width: 1918px; height: 1078px; position: absolute; top: 0; left: 0;
-          transform-origin: top left; }
+#canvas { 
+  width: 1918px; 
+  height: 1147px; /* ACTUALIZADO: Medida exacta de Figma */
+  position: absolute; 
+  top: 0; 
+  left: 0;
+  transform-origin: top left; 
+  background: #1C1C1C;
+  transition: background 0.4s ease, opacity 0.4s ease; /* Transición suave para el bloqueo */
+}
 
 /* ── Panel base ─────────────────────────────────────────────────────
    Each sensor/feature panel is absolutely positioned by JS.           */
@@ -24,10 +32,10 @@ body { background: #1c1c1c; overflow: hidden; font-family: 'Inter', sans-serif; 
 }
 
 /* ── Panel: Distance ──────────────────────────────────────────────── */
-#panel-distance  { left: 14px;  top: 73px;   width: 663px; height: 484px; }
-#panel-luminosity{ left: 14px;  top: 577px;  width: 663px; height: 484px; }
-#panel-pomodoro  { left: calc(35% + 25.7px); top: calc(4.55% + 24px); width: 568px; height: 988px; }
-#panel-rutina    { left: calc(65% + 38.3px); top: calc(4.55% + 24px); width: 618px; height: 988px; }
+#panel-distance  { left: 14px;  top: 125px;  width: 663px; height: 484px; }
+#panel-luminosity{ left: 14px;  top: 629px;  width: 663px; height: 484px; }
+#panel-pomodoro  { left: 697px; top: 125px;  width: 568px; height: 988px; }
+#panel-rutina    { left: 1285px; top: 125px; width: 618px; height: 988px; }
 
 /* ── Shared panel header ────────────────────────────────────────────── */
 .panel-header {
@@ -376,4 +384,69 @@ body { background: #1c1c1c; overflow: hidden; font-family: 'Inter', sans-serif; 
   position: absolute;
   left: 50%; transform: translateX(-50%);
   bottom: 32px; width: 264px;
+}
+
+/* ==========================================================================
+   NUEVO COMPONENTE DE HARDWARE DESDE FIGMA
+   ========================================================================== */
+
+#status-badge {
+  position: absolute;
+  width: 213px;
+  height: 56px;
+  left: 1690px;
+  top: 25px;
+  background: #1C1C1C;
+  border-radius: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999; /* Se superpone sobre el lienzo */
+  transition: all 0.3s ease;
+}
+
+.badge-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+
+.badge-text {
+  font-family: 'Dangrek', sans-serif;
+  font-size: 24px;
+  line-height: 21px;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.badge-icon {
+  font-size: 20px;
+}
+
+/* Modificadores lógicos inyectados por app.js */
+.badge-desconectado {
+  border: 4px solid #D8461C;
+}
+.badge-desconectado .badge-glow {
+  position: absolute;
+  width: 110.98px;
+  height: 110.98px;
+  background: #D8461C;
+  opacity: 0.5;
+  filter: blur(28.2658px);
+  z-index: -1;
+}
+
+.badge-conectado {
+  border: 4px solid #339BDD;
+}
+.badge-conectado .badge-glow {
+  position: absolute;
+  width: 110.98px;
+  height: 110.98px;
+  background: #339BDD;
+  opacity: 0.5;
+  filter: blur(28.2658px);
+  z-index: -1;
 }
