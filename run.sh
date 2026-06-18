@@ -3,10 +3,23 @@ echo "==================================================="
 echo "  Levantando Entorno del Asistente de Escritorio"
 echo "==================================================="
 
+# 0. Verificar si Python3 está instalado
+if ! command -v python3 &> /dev/null; then
+    echo "[-] Error: Python3 no está instalado en este sistema."
+    echo "[*] Para instalarlo, ejecute el siguiente comando en su terminal:"
+    echo "    sudo apt update && sudo apt install python3 python3-venv python3-pip"
+    exit 1
+fi
+
 # 1. Verificar si existe venv, si no, crearlo
 if [ ! -d "venv" ]; then
     echo "[-] No se detectó entorno virtual. Creando venv..."
-    python3 -m venv venv
+    # Verificar si el módulo venv de python está disponible (común en entornos limpios de Linux)
+    if ! python3 -m venv venv &> /dev/null; then
+        echo "[-] Error: Falta el paquete python3-venv."
+        echo "[*] Ejecute: sudo apt install python3-venv"
+        exit 1
+    fi
 fi
 
 # 2. Activar entorno virtual
