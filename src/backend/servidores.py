@@ -1,12 +1,15 @@
 import socket
 import threading
 import json
+import time
 from flask import Flask, jsonify, send_from_directory, request 
 from flask_cors import CORS
 
 # Lista global para rastrear conexiones TCP activas con hardware o simuladores
 dispositivos_conectados = []
 lock_dispositivos = threading.Lock()
+ultimo_estado_conectado = False
+
 
 def transmitir_a_hardware(data_dict):
     """Envía de forma pasiva e inmediata un comando a todos los Arduinos conectados."""
@@ -78,6 +81,28 @@ class ServidorHardware(threading.Thread):
                 dispositivos_conectados.remove(client_socket)
         client_socket.close()
 
+def actualizar_dispositivos_y_sincronizar(modelo_datos):
+    global ultimo_estado_conectado
+    with lock_dispositivos:
+        actualmente_conectado = len(dispositivos_conectados) > 0
+    
+    # ¡Tú idea! Si pasa de desconectado a conectado, enviamos los rangos actuales de golpe
+    if actualmente_conectado and not ultimo_estado_conectado:
+        print("[*] ¡Dispositivo detectado! Transmitiendo ráfaga de configuración inicial...")
+        transmitir_a_hardware({
+            "tipo": "config_dist",
+            "min": getattr(modelo_datos, 'dist_min', 70),
+            "max": getattr(modelo_datos, 'dist_max', 80)
+        })
+        time.sleep(0.1) # Breve delay para evitar saturación de buffer
+        transmitir_a_hardware({
+            "tipo": "config_lux",
+            "min": getattr(modelo_datos, 'lux_min', 500),
+            "max": getattr(modelo_datos, 'lux_max', 1000)
+        })
+    
+    ultimo_estado_conectado = actualmente_conectado
+    return actualmente_conectado
 
 def crear_app_web(modelo_datos, ruta_frontend):
     import logging
@@ -92,18 +117,39 @@ def crear_app_web(modelo_datos, ruta_frontend):
     def serve_static(filename): return send_from_directory(ruta_frontend, filename)
 
     @app.route('/api/telemetria', methods=['GET'])
-    def get_telemetria(): return jsonify(modelo_datos.obtener_datos())
+    def get_telemetria(): 
+        conectado = actualizar_dispositivos_y_sincronizar(modelo_datos)
+        
+        dict_datos = modelo_datos.obtener_datos()
+        dict_datos["hardware_conectado"] = conectado # Inyectamos bandera de red
+        return jsonify(dict_datos)
     
     @app.route('/api/configurar/distancia', methods=['POST'])
     def configurar_distancia():
         datos = request.get_json()
-        transmitir_a_hardware({"tipo": "config_dist", "min": datos.get('min'), "max": datos.get('max')})
+        min_val = datos.get('min')
+        max_val = datos.get('max')
+        
+        # PERSISTENCIA: Guardamos en el modelo centralizado para recordar en reconexiones
+        with modelo_datos.lock:
+            modelo_datos.dist_min = min_val
+            modelo_datos.dist_max = max_val
+            
+        transmitir_a_hardware({"tipo": "config_dist", "min": min_val, "max": max_val})
         return jsonify({"status": "success"})
 
     @app.route('/api/configurar/luz', methods=['POST'])
     def configurar_luz():
         datos = request.get_json()
-        transmitir_a_hardware({"tipo": "config_lux", "min": datos.get('min'), "max": datos.get('max')})
+        min_val = datos.get('min')
+        max_val = datos.get('max')
+        
+        # PERSISTENCIA: Guardamos en el modelo centralizado para recordar en reconexiones
+        with modelo_datos.lock:
+            modelo_datos.lux_min = min_val
+            modelo_datos.lux_max = max_val
+            
+        transmitir_a_hardware({"tipo": "config_lux", "min": min_val, "max": max_val})
         return jsonify({"status": "success"})
 
     @app.route('/api/configurar/pomodoro', methods=['POST'])

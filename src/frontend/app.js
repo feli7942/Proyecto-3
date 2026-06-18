@@ -124,11 +124,27 @@ function fetchHardwareTelemetria() {
       return response.json();
     })
     .then(data => {
-      // Sincronizar con las variables reales de ejecución de tus compañeros
+      const rootStyle = document.body.style; // CORREGIDO: Bloquear a nivel de body completo para incluir los modales
+
+      // Control de bloqueo e iluminación de fondo por desconexión
+      if (!data.hardware_conectado) {
+        // Gris oscuro, sin clics en nada (ni modales) y opacidad baja
+        rootStyle.background = "#121212"; 
+        rootStyle.pointerEvents = "none"; 
+        rootStyle.opacity = "0.4";
+        return; // Detener flujo para no pintar datos viejos
+      } else {
+        // Restaurar entorno claro y habilitar clics e interacciones de inmediato
+        rootStyle.background = "#1c1c1c"; 
+        rootStyle.pointerEvents = "auto"; 
+        rootStyle.opacity = "1";
+      }
+
+      // Sincronizar variables internas del frontend
       state.distCm = data.distancia;
       state.luxK   = data.luminosidad;
       
-      // SOLUCIÓN: Invocar las dos funciones de renderizado reales presentes en el archivo
+      // Renderizar los cambios gráficos nativos
       renderDistance();
       renderLux();
 
@@ -140,7 +156,6 @@ function fetchHardwareTelemetria() {
       console.error("[-] No se pudo conectar con el Asistente de Escritorio:", error.message);
     });
 }
-
 
 /* ╔══════════════════════════════════════════════════════════════════╗
    ║  3. RUNTIME STATE                                                ║
