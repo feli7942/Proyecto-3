@@ -1,165 +1,244 @@
-import socket
+import serial
+import serial.tools.list_ports
 import threading
-import json
 import time
-from flask import Flask, jsonify, send_from_directory, request 
+import logging
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
-
-# Lista global para rastrear conexiones TCP activas con hardware o simuladores
-dispositivos_conectados = []
-lock_dispositivos = threading.Lock()
+ 
+# ============================================================================
+#  Protocolo sobre el cable serial (texto plano, una linea por mensaje):
+#      Arduino -> PC (telemetria):   "D:<dist>,L:<lux>,E:<estado>"
+#      PC -> Arduino (comandos):     "CD:<min>,<max>"   config distancia
+#                                    "CL:<min>,<max>"   config luz
+#                                    "CP:<conc>,<desc>" config pomodoro (0/1)
+# ============================================================================
+ 
+# ----------------------------------------------------------------------------
+#  Configuracion del puerto
+#  Windows:  "COM3", "COM4", ...
+#  Linux:    "/dev/ttyACM0" (UNO original) o "/dev/ttyUSB0" (clones CH340)
+#  macOS:    "/dev/cu.usbmodemXXXX" o "/dev/cu.usbserial-XXXX"
+#  Si se deja en None, se intenta autodetectar.
+# ----------------------------------------------------------------------------
+PUERTO_SERIAL = "COM8"      # ej. "COM3"  -> None = autodetectar
+BAUDIOS = 9600
+ 
+# ----------------------------------------------------------------------------
+#  Estado global de la conexion (reemplaza la lista de sockets)
+# ----------------------------------------------------------------------------
+conexion_serial = None
+lock_serial = threading.Lock()
+hardware_conectado = False
 ultimo_estado_conectado = False
-
-
+ 
+ 
+# ----------------------------------------------------------------------------
+#  Traduccion dict <-> linea serial
+# ----------------------------------------------------------------------------
+def _dict_a_linea(data_dict):
+    """Convierte un comando (dict) en la linea de texto que entiende el Arduino."""
+    tipo = data_dict.get("tipo")
+    if tipo == "config_dist":
+        return f"CD:{int(data_dict['min'])},{int(data_dict['max'])}\n"
+    if tipo == "config_lux":
+        return f"CL:{int(data_dict['min'])},{int(data_dict['max'])}\n"
+    if tipo == "pomodoro":
+        conc = 1 if data_dict.get("en_concentracion") else 0
+        desc = 1 if data_dict.get("en_descanso") else 0
+        return f"CP:{conc},{desc}\n"
+    return None
+ 
+ 
+def _parse_linea(linea):
+    """Convierte 'D:65,L:350,E:1' en (dist, lux, estado). Devuelve None si no es valida."""
+    try:
+        campos = {}
+        for parte in linea.split(","):
+            clave, valor = parte.split(":")
+            campos[clave.strip()] = int(valor.strip())
+        return campos["D"], campos["L"], campos.get("E", 0)
+    except (ValueError, KeyError):
+        return None
+ 
+ 
+def detectar_puerto_arduino():
+    """Busca un puerto que parezca un Arduino. Devuelve el nombre o None."""
+    claves = ("arduino", "ch340", "usb serial", "wch", "ttyacm", "ttyusb", "usbmodem", "usbserial")
+    for p in serial.tools.list_ports.comports():
+        texto = f"{p.device} {p.description} {p.manufacturer}".lower()
+        if any(k in texto for k in claves):
+            return p.device
+    return None
+ 
+ 
+# ----------------------------------------------------------------------------
+#  Envio de comandos al hardware (misma firma que antes: recibe un dict)
+# ----------------------------------------------------------------------------
 def transmitir_a_hardware(data_dict):
-    """Envía de forma pasiva e inmediata un comando a todos los Arduinos conectados."""
-    payload = (json.dumps(data_dict) + "\n").encode('utf-8')
-    with lock_dispositivos:
-        for sock in dispositivos_conectados[:]:
+    """Envia de forma inmediata un comando al Arduino conectado por serial."""
+    linea = _dict_a_linea(data_dict)
+    if not linea:
+        return
+    with lock_serial:
+        if conexion_serial and conexion_serial.is_open:
             try:
-                sock.sendall(payload)
+                conexion_serial.write(linea.encode("utf-8"))
             except Exception:
-                dispositivos_conectados.remove(sock)
-
+                pass
+ 
+ 
+# ----------------------------------------------------------------------------
+#  Hilo lector del puerto serial (reemplaza a ServidorHardware con sockets)
+#  Se mantiene el nombre ServidorHardware para no romper el import en main.py,
+#  pero el constructor ahora recibe (puerto, baudios, modelo_datos).
+# ----------------------------------------------------------------------------
 class ServidorHardware(threading.Thread):
-    def __init__(self, host, port, modelo_datos):
+    def __init__(self, puerto, baudios, modelo_datos):
         super().__init__()
-        self.host = host
-        self.port = port
+        self.puerto = puerto
+        self.baudios = baudios
         self.modelo = modelo_datos
         self.running = True
         self.daemon = True
-
+ 
     def run(self):
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            server_socket.bind((self.host, self.port))
-            server_socket.listen(5)
-            print(f"[*] Servidor de Sockets activo en {self.host}:{self.port}")
-            
-            while self.running:
-                try:
-                    server_socket.settimeout(1.0)
-                    client_socket, addr = server_socket.accept()
-                    with lock_dispositivos:
-                        dispositivos_conectados.append(client_socket)
-                    
-                    hilo = threading.Thread(target=self._atender_dispositivo, args=(client_socket, addr))
-                    hilo.daemon = True
-                    hilo.start()
-                except socket.timeout:
-                    continue
-        except Exception as e:
-            print(f"[-] Error en el servidor de hardware: {e}")
-        finally:
-            server_socket.close()
-
-    def _atender_dispositivo(self, client_socket, addr):
-        print(f"[+] Conexión establecida desde hardware/test en la IP: {addr}")
+        global conexion_serial, hardware_conectado
+ 
+        while self.running:
+            puerto = self.puerto or detectar_puerto_arduino()
+            if not puerto:
+                print("[-] No se encontro ningun puerto de Arduino. Reintentando...")
+                time.sleep(2)
+                continue
+ 
+            try:
+                ser = serial.Serial(puerto, self.baudios, timeout=1)
+            except serial.SerialException as e:
+                print(f"[-] No se pudo abrir {puerto}: {e}. Reintentando...")
+                time.sleep(2)
+                continue
+ 
+            with lock_serial:
+                conexion_serial = ser
+ 
+            # El Arduino se reinicia al abrir el puerto: esperar el arranque.
+            time.sleep(2)
+            hardware_conectado = True
+            print(f"[+] Conectado al Arduino por serial en {puerto}")
+ 
+            self._leer_bucle(ser)
+ 
+            # Salio del bucle -> desconexion
+            hardware_conectado = False
+            with lock_serial:
+                conexion_serial = None
+            try:
+                ser.close()
+            except Exception:
+                pass
+            print(f"[-] Arduino desconectado de {puerto}")
+            time.sleep(2)  # reintentar conexion
+ 
+    def _leer_bucle(self, ser):
         while self.running:
             try:
-                raw_data = client_socket.recv(1024).decode('utf-8')
-                if not raw_data:
-                    break
-                
-                datos = json.loads(raw_data.strip())
-                dist = int(datos.get("distancia", 80))
-                lux = int(datos.get("luminosidad", 500)) # Ahora escala 0-1023
-                
-                # FSM básica
-                estado = 1 if (70 <= dist <= 80) else 2
-                self.modelo.actualizar(dist, lux, estado)
-                
-            except json.JSONDecodeError:
-                pass
+                raw = ser.readline().decode("utf-8", errors="ignore").strip()
             except Exception:
-                break
-        print(f"[-] Dispositivo desconectado de la IP: {addr}")
-        with lock_dispositivos:
-            if client_socket in dispositivos_conectados:
-                dispositivos_conectados.remove(client_socket)
-        client_socket.close()
-
+                break          # puerto cerrado o desconectado fisicamente
+            if not raw:
+                continue        # timeout sin datos
+ 
+            datos = _parse_linea(raw)
+            if datos is None:
+                continue        # linea incompleta o ruido
+ 
+            dist, lux, estado = datos
+            # El Arduino es el dueno de la FSM, asi que usamos el estado que el reporta.
+            # (En la version socket se recalculaba aqui; si prefieres eso, descomenta:)
+            # estado = 1 if (self.modelo.dist_min <= dist <= self.modelo.dist_max) else 2
+            self.modelo.actualizar(dist, lux, estado)
+ 
+ 
+# ----------------------------------------------------------------------------
+#  Sincronizacion en reconexion (igual que antes, pero basada en el flag serial)
+# ----------------------------------------------------------------------------
 def actualizar_dispositivos_y_sincronizar(modelo_datos):
     global ultimo_estado_conectado
-    with lock_dispositivos:
-        actualmente_conectado = len(dispositivos_conectados) > 0
-    
-    # ¡Tú idea! Si pasa de desconectado a conectado, enviamos los rangos actuales de golpe
+    actualmente_conectado = hardware_conectado
+ 
+    # Al pasar de desconectado -> conectado, mandamos la rafaga de configuracion.
     if actualmente_conectado and not ultimo_estado_conectado:
-        print("[*] ¡Dispositivo detectado! Transmitiendo ráfaga de configuración inicial...")
+        print("[*] Dispositivo detectado! Transmitiendo configuracion inicial...")
         transmitir_a_hardware({
             "tipo": "config_dist",
-            "min": getattr(modelo_datos, 'dist_min', 70),
-            "max": getattr(modelo_datos, 'dist_max', 80)
+            "min": getattr(modelo_datos, "dist_min", 70),
+            "max": getattr(modelo_datos, "dist_max", 80),
         })
-        time.sleep(0.1) # Breve delay para evitar saturación de buffer
+        time.sleep(0.1)
         transmitir_a_hardware({
             "tipo": "config_lux",
-            "min": getattr(modelo_datos, 'lux_min', 500),
-            "max": getattr(modelo_datos, 'lux_max', 1000)
+            "min": getattr(modelo_datos, "lux_min", 500),
+            "max": getattr(modelo_datos, "lux_max", 1000),
         })
-    
+ 
     ultimo_estado_conectado = actualmente_conectado
     return actualmente_conectado
-
+ 
+ 
+# ----------------------------------------------------------------------------
+#  App web (sin cambios: las rutas y el contrato con el frontend son iguales)
+# ----------------------------------------------------------------------------
 def crear_app_web(modelo_datos, ruta_frontend):
-    import logging
-    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
     app = Flask(__name__)
     CORS(app)
-
+ 
     @app.route('/')
-    def index(): return send_from_directory(ruta_frontend, 'index.html')
-
+    def index():
+        return send_from_directory(ruta_frontend, 'index.html')
+ 
     @app.route('/<path:filename>')
-    def serve_static(filename): return send_from_directory(ruta_frontend, filename)
-
+    def serve_static(filename):
+        return send_from_directory(ruta_frontend, filename)
+ 
     @app.route('/api/telemetria', methods=['GET'])
-    def get_telemetria(): 
+    def get_telemetria():
         conectado = actualizar_dispositivos_y_sincronizar(modelo_datos)
-        
         dict_datos = modelo_datos.obtener_datos()
-        dict_datos["hardware_conectado"] = conectado # Inyectamos bandera de red
+        dict_datos["hardware_conectado"] = conectado
         return jsonify(dict_datos)
-    
+ 
     @app.route('/api/configurar/distancia', methods=['POST'])
     def configurar_distancia():
         datos = request.get_json()
         min_val = datos.get('min')
         max_val = datos.get('max')
-        
-        # PERSISTENCIA: Guardamos en el modelo centralizado para recordar en reconexiones
         with modelo_datos.lock:
             modelo_datos.dist_min = min_val
             modelo_datos.dist_max = max_val
-            
         transmitir_a_hardware({"tipo": "config_dist", "min": min_val, "max": max_val})
         return jsonify({"status": "success"})
-
+ 
     @app.route('/api/configurar/luz', methods=['POST'])
     def configurar_luz():
         datos = request.get_json()
         min_val = datos.get('min')
         max_val = datos.get('max')
-        
-        # PERSISTENCIA: Guardamos en el modelo centralizado para recordar en reconexiones
         with modelo_datos.lock:
             modelo_datos.lux_min = min_val
             modelo_datos.lux_max = max_val
-            
         transmitir_a_hardware({"tipo": "config_lux", "min": min_val, "max": max_val})
         return jsonify({"status": "success"})
-
+ 
     @app.route('/api/configurar/pomodoro', methods=['POST'])
     def configurar_pomodoro():
         datos = request.get_json()
         transmitir_a_hardware({
             "tipo": "pomodoro",
             "en_concentracion": datos.get('en_concentracion'),
-            "en_descanso": datos.get('en_descanso')
+            "en_descanso": datos.get('en_descanso'),
         })
         return jsonify({"status": "success"})
-
+ 
     return app
